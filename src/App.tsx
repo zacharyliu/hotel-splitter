@@ -165,11 +165,8 @@ function App() {
     if (people.length === 0 || costs.length === 0) return
 
     const lines: string[] = []
-    lines.push(`Total Cost: $${price.toFixed(2)}`)
-    lines.push(`Check-in: ${checkInDate}`)
-    lines.push(`Check-out: ${checkOutDate}`)
-    lines.push(`Total Nights: ${nights}`)
-    lines.push(`Cost per Night: $${pricePerNight.toFixed(2)}`)
+    lines.push(`Total: $${price.toFixed(2)} (${nights} nights @ $${pricePerNight.toFixed(2)}/night)`)
+    lines.push(`${checkInDate} to ${checkOutDate}`)
     lines.push('')
 
     for (const person of people) {
