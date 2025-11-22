@@ -25,7 +25,7 @@ function parseStateFromHash(): AppState {
       people: [],
     }
   }
-  
+
   try {
     const decoded = decodeURIComponent(hash)
     const state: AppState = JSON.parse(decoded)
@@ -50,7 +50,7 @@ function parseStateFromHash(): AppState {
 function updateHash(state: AppState) {
   const encoded = encodeURIComponent(JSON.stringify(state))
   const currentHash = window.location.hash.slice(1)
-  
+
   if (currentHash !== encoded) {
     window.location.hash = encoded
   }
@@ -60,9 +60,9 @@ function updateHash(state: AppState) {
 // Helper function to format date for display
 function formatDate(dateString: string): string {
   const date = new Date(dateString + 'T00:00:00')
-  return date.toLocaleDateString('en-US', { 
+  return date.toLocaleDateString('en-US', {
     weekday: 'short',
-    month: 'short', 
+    month: 'short',
     day: 'numeric'
   })
 }
@@ -149,11 +149,11 @@ function App() {
       people: prev.people.map((p) =>
         p.id === personId
           ? {
-              ...p,
-              nights: p.nights.map((n, i) =>
-                i === nightIndex ? !n : n
-              ),
-            }
+            ...p,
+            nights: p.nights.map((n, i) =>
+              i === nightIndex ? !n : n
+            ),
+          }
           : p
       ),
     }))
@@ -165,20 +165,21 @@ function App() {
     if (people.length === 0 || costs.length === 0) return
 
     const lines: string[] = []
-    lines.push('Hotel Split Summary')
+    lines.push(`Total Cost: $${price.toFixed(2)}`)
+    lines.push(`Check-in: ${checkInDate}`)
+    lines.push(`Check-out: ${checkOutDate}`)
+    lines.push(`Total Nights: ${nights}`)
+    lines.push(`Cost per Night: $${pricePerNight.toFixed(2)}`)
     lines.push('')
-    lines.push(`Total: $${price.toFixed(2)} for ${nights} ${nights === 1 ? 'night' : 'nights'}`)
-    lines.push('')
-    
+
     for (const person of people) {
       const personCost = costs.find((c) => c.personId === person.id)
       if (!personCost || personCost.total === 0) continue
-      
+
       const personName = person.name || 'Unnamed'
       lines.push(`${personName}: $${personCost.total.toFixed(2)}`)
-      
+
       // List which nights they stayed
-      const stayedNights: string[] = []
       for (let i = 0; i < nights; i++) {
         if (person.nights[i] && personCost.perNight[i] > 0) {
           const dateStr = nightDates[i]
@@ -186,20 +187,16 @@ function App() {
           const formattedDate = date.toLocaleDateString('en-US', {
             weekday: 'short',
             month: 'short',
-            day: 'numeric',
+            day: 'numeric'
           })
-          stayedNights.push(`${formattedDate} ($${personCost.perNight[i].toFixed(2)})`)
+          lines.push(`- ${formattedDate}: $${personCost.perNight[i].toFixed(2)}`)
         }
-      }
-      
-      if (stayedNights.length > 0) {
-        lines.push(`  Nights: ${stayedNights.join(', ')}`)
       }
       lines.push('')
     }
 
     const summaryText = lines.join('\n')
-    
+
     try {
       await navigator.clipboard.writeText(summaryText)
       // Show brief confirmation
@@ -229,7 +226,7 @@ function App() {
             />
           </label>
         </div>
-        
+
         <div className="input-group">
           <label>
             Check-in Date:
@@ -242,7 +239,7 @@ function App() {
             />
           </label>
         </div>
-        
+
         <div className="input-group">
           <label>
             Check-out Date:
@@ -274,86 +271,88 @@ function App() {
                 {copyButtonText}
               </button>
             )}
-            <button onClick={addPerson}>Add Person</button>
+            <button onClick={addPerson} className="add-person-btn">Add Person</button>
           </div>
         </div>
 
         {people.length === 0 && (
-          <p className="empty-state">No people added yet. Click "Add Person" to start.</p>
+          <div className="empty-state">
+            <p>No people added yet.</p>
+            <p>Click "Add Person" to start splitting costs.</p>
+          </div>
         )}
 
-        {people.length > 0 && nights > 0 && (
-          <div className="table-container">
-            <table>
-              <thead>
-                <tr>
-                  <th>Name</th>
-                  {nightDates.map((date, i) => (
-                    <th key={i} title={date}>
-                      {formatDate(date)}
-                    </th>
-                  ))}
-                  <th className="total-header">Total</th>
-                </tr>
-              </thead>
-              <tbody>
-                {people.map((person, personIndex) => {
-                  const personCosts = costs.find(
-                    (c) => c.personId === person.id
-                  )
-                  return (
-                    <tr key={person.id}>
-                      <td className="name-cell">
-                        <input
-                          type="text"
-                          value={person.name}
-                          onChange={(e) =>
-                            updatePersonName(person.id, e.target.value)
-                          }
-                          placeholder={`Person ${personIndex + 1}`}
-                        />
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            removePerson(person.id)
-                          }}
-                          className="remove-btn-inline"
-                          title="Remove person"
-                        >
-                          ×
-                        </button>
-                      </td>
-                      {nightDates.map((_, i) => (
-                        <td 
-                          key={i}
-                          className="night-cell"
-                          onClick={() => toggleNight(person.id, i)}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={person.nights[i] || false}
-                            onChange={() => toggleNight(person.id, i)}
-                            onClick={(e) => e.stopPropagation()}
-                          />
-                          <span className="cost">
-                            {personCosts && personCosts.perNight[i] > 0
-                              ? `$${personCosts.perNight[i].toFixed(2)}`
-                              : '\u00A0'}
-                          </span>
-                        </td>
-                      ))}
-                      <td className="total-cell">
-                        <strong>
-                          {personCosts && personCosts.total > 0
-                            ? `$${personCosts.total.toFixed(2)}`
-                            : '\u00A0'}
-                        </strong>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
+        {people.length > 0 && (
+          <div className="people-list">
+            {people.map((person, personIndex) => {
+              const personCosts = costs.find((c) => c.personId === person.id)
+              const totalCost = personCosts ? personCosts.total : 0
+
+              return (
+                <div className="person-card" key={person.id}>
+                  <div className="card-header">
+                    <input
+                      type="text"
+                      className="person-name-input"
+                      value={person.name}
+                      onChange={(e) =>
+                        updatePersonName(person.id, e.target.value)
+                      }
+                      placeholder={`Person ${personIndex + 1}`}
+                    />
+                    <button
+                      onClick={() => removePerson(person.id)}
+                      className="remove-btn"
+                      title="Remove person"
+                    >
+                      ×
+                    </button>
+                  </div>
+
+                  {nights > 0 ? (
+                    <div className="nights-list">
+                      {nightDates.map((date, i) => {
+                        const isSelected = person.nights[i] || false
+                        const cost = personCosts && personCosts.perNight[i] > 0
+                          ? personCosts.perNight[i]
+                          : 0
+
+                        return (
+                          <label
+                            key={i}
+                            className={`night-item ${isSelected ? 'selected' : ''}`}
+                          >
+                            <span className="night-date">{formatDate(date)}</span>
+                            <div className="night-actions">
+                              <span className={`night-price ${cost > 0 ? 'visible' : ''}`}>
+                                ${cost > 0 ? cost.toFixed(2) : (pricePerNight > 0 ? pricePerNight.toFixed(2) : '0.00')}
+                              </span>
+                              <input
+                                type="checkbox"
+                                className="night-checkbox"
+                                checked={isSelected}
+                                onChange={() => toggleNight(person.id, i)}
+                              />
+                            </div>
+                          </label>
+                        )
+                      })}
+                    </div>
+                  ) : (
+                    <div className="nights-list">
+                      <p style={{ color: '#666', fontStyle: 'italic', fontSize: '14px', margin: '0' }}>
+                        Set check-in and check-out dates to select nights.
+                      </p>
+                    </div>
+                  )}
+
+                  <div className="card-footer">
+                    <span className="total-label">Total</span>
+                    <span className="total-amount">${totalCost.toFixed(2)}</span>
+                  </div>
+                </div>
+              )
+            })}
           </div>
         )}
       </div>
