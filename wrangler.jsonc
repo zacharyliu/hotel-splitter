@@ -7,6 +7,12 @@
 	"name": "hotel-splitter",
 	"main": "worker/index.ts",
 	"compatibility_date": "2025-11-09",
+	"routes": [
+		{
+			"pattern": "hotel-splitter.dogsmilex.com",
+			"custom_domain": true
+		}
+	],
 	"assets": {
 		"not_found_handling": "single-page-application"
 	},
